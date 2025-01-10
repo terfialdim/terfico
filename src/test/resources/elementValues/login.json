@@ -1,0 +1,18 @@
+[
+  {
+    "key": "usernameField",
+    "value": "input[placeholder='Username']",
+    "type": "css"
+  },
+  {
+    "key": "passwordField",
+    "value": "input[placeholder='Password']",
+    "type": "css"
+  },
+  {
+    "key": "loginButton",
+    "value": "//div[@dir='auto' and text()='Login']",
+    "type": "xpath"
+  }
+]
+

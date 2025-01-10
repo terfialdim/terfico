@@ -20,6 +20,7 @@ tags: single word
 
 Vowel counts in multiple word
 -----------------------------
+selam cooo
 
 This is the second scenario in this specification
 

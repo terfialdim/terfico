@@ -1,30 +1,32 @@
 package com.banking.stepImp;
 
 import com.banking.pages.LoginPage;
-import com.banking.utils.DriverFactory;
 import com.thoughtworks.gauge.Step;
+import com.banking.utils.Config; // Config sınıfı import edildi.
 
-import java.io.IOException;
+public class LoginSteps {
 
-public class LoginSteps extends DriverFactory {
+    private final LoginPage loginPage;
 
-    private final LoginPage loginPage = new LoginPage();
-
-    public LoginSteps() throws IOException {
+    public LoginSteps() {
+        this.loginPage = new LoginPage();
     }
 
-    @Step("Navigate to base URL <url>")
-    public void navigateToBaseUrl(String url) {
-        loginPage.navigateToBaseUrl(url);
+    @Step("Navigate to baseURL")
+    public void navigateToBaseURL() {
+        String baseURL = Config.get("BASE_URL"); // Properties dosyasından alınır.
+        loginPage.navigateToBaseURL(baseURL);
     }
 
-    @Step("Enter <username> into the username field")
-    public void enterUsername(String username) {
+    @Step("Enter username into the username field")
+    public void enterUsername() {
+        String username = Config.get("USERNAME"); // Properties dosyasından alınır.
         loginPage.enterUsername(username);
     }
 
-    @Step("Enter <password> into the password field")
-    public void enterPassword(String password) {
+    @Step("Enter password into the password field")
+    public void enterPassword() {
+        String password = Config.get("PASSWORD"); // Properties dosyasından alınır.
         loginPage.enterPassword(password);
     }
 

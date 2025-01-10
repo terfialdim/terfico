@@ -1,143 +1,86 @@
 package com.banking.utils;
 
-import com.banking.utils.ElementHelper;
-import com.thoughtworks.gauge.AfterScenario;
-import com.thoughtworks.gauge.BeforeScenario;
-import com.banking.model.ElementInfo;
-import org.openqa.selenium.By;
 import org.openqa.selenium.WebDriver;
 import org.openqa.selenium.chrome.ChromeDriver;
 import org.openqa.selenium.chrome.ChromeOptions;
 import org.openqa.selenium.firefox.FirefoxDriver;
 import org.openqa.selenium.firefox.FirefoxOptions;
-import org.openqa.selenium.interactions.Actions;
-import org.openqa.selenium.remote.DesiredCapabilities;
 import org.openqa.selenium.support.ui.WebDriverWait;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import java.io.File;
-import java.io.IOException;
+
 import java.util.HashMap;
-import java.util.List;
 import java.util.Map;
 import java.util.concurrent.TimeUnit;
 
-import com.thoughtworks.gauge.ExecutionContext;
-
-
 public class DriverFactory {
 
-    // ElementHelper static olarak tanımlandı
-    private static ElementHelper elementHelper = new ElementHelper();
-    protected static WebDriver driver;
+    private static WebDriver driver;
+    private static WebDriverWait wait;
+    private static final Logger logger = LoggerFactory.getLogger(DriverFactory.class);
 
-    public DriverFactory() throws IOException {
-        String workingDir = System.getProperty("user.dir");
-        List<File> fileList = ElementHelper.getFileList(workingDir + "/src/test/resources/elementValues");
-        elementHelper.initMap(fileList);
+    private DriverFactory() {
+        // Private constructor to enforce Singleton pattern
     }
 
-    // findElementInfoByKey metodunu static hale getirdik
-    public static ElementInfo findElementInfoByKey(String key) {
-        return elementHelper.findElementInfoByKey(key);
-    }
-
-    public By getElementInfoBy(ElementInfo elementInfo) {
-        return elementHelper.getElementInfoBy(elementInfo);
-    }
-
-
-    protected static WebDriverWait wait;
-    protected static Actions action;
-
-    public static WebDriver getDriver() {
+    public static WebDriver getDriver(String browserName, boolean isHeadless) {
+        if (driver == null) {
+            initializeDriver(browserName, isHeadless);
+        }
         return driver;
     }
 
-    protected Logger logger = LoggerFactory.getLogger(getClass());
-    DesiredCapabilities capabilities;
-    ChromeOptions chromeOptions;
-    FirefoxOptions firefoxOptions;
-    String browserName = "chrome";
-    String selectPlatform = System.getProperty("os.name").toLowerCase().contains("win") ? "windows" : "mac";
-    String testUrl = "https://catchylabs-webclient.testinium.com/student%22";
-
-    public ChromeOptions chromeOptions() { //chrome tarayıcısının ayarlarını özelleştirilmesi
-        chromeOptions = new ChromeOptions();
-        capabilities = DesiredCapabilities.chrome(); // chrome için özel yetenekler oluşturur
-        Map<String, Object> prefs = new HashMap<>(); // tarayıcı tercihlerini bir map 'in içine atıyoruz
-        prefs.put("profile.default_content_setting_values.notifications", 2);
-        chromeOptions.setExperimentalOption("prefs", prefs);
-        chromeOptions.addArguments("--ignore-certificate-errors");
-        chromeOptions.addArguments("--kiosk"); // tarayıcıyı tam ekran boyutunda başlatır
-        chromeOptions.addArguments("--disable-notifications"); // web bildirimlerini devre dışı bırakır
-        System.setProperty("webdriver.chrome.driver", System.getProperty("user.dir") + "/web_driver/chromedriver.exe");//Selenium'un chrome tarayıcısını kontrol etmesi için, zorunlu
-        chromeOptions.merge(capabilities); //DesiredCapalities nesnesini ChromeOptions ile birleştirir.
-        return chromeOptions;
-
-    }
-
-    public FirefoxOptions firefoxOptions() { // firefox tarayıcısının ayarlarını özelleştirilmesi
-        firefoxOptions = new FirefoxOptions();
-        capabilities = DesiredCapabilities.firefox(); // firefox için özel yetenekler oluşturur
-        Map<String, Object> preference = new HashMap<>(); // tarayıcı tercihlerini bir map 'in içine atıyoruz
-        preference.put("profile.default_content_setting_values.notifications", 2);
-        chromeOptions.setExperimentalOption("preference", preference);
-        chromeOptions.addArguments("--ignore-certificate-errors");
-        chromeOptions.addArguments("--kiosk"); // tarayıcıyı tam ekran boyutunda başlatır
-        chromeOptions.addArguments("--disable-notifications"); // web bildirimlerini devre dışı bırakır
-        chromeOptions.addArguments("--start-fullscreen");
-        System.setProperty("webdriver.firefox.driver", "web_driver/chromedriver"); //Selenium'un chrome tarayıcısını kontrol etmesi için, zorunlu
-        firefoxOptions.merge(capabilities); //DesiredCapalities nesnesini ChromeOptions ile birleştirir.
-        return firefoxOptions;
-    }
-
-    private void initializeDriver() {
+    private static void initializeDriver(String browserName, boolean isHeadless) {
         switch (browserName.toLowerCase()) {
-            case "chrome":                                 //Eğer browserName chrome ise bana ChromeDriver nesnesi oluşturur.
-                driver = new ChromeDriver(chromeOptions());
+            case "chrome":
+                driver = new ChromeDriver(getChromeOptions(isHeadless));
                 break;
             case "firefox":
-                driver = new FirefoxDriver(firefoxOptions());
+                driver = new FirefoxDriver(getFirefoxOptions(isHeadless));
                 break;
             default:
-                throw new IllegalStateException("Desteklenmeyen tarayıcı");
-        }
-    }
-
-    private void setupBrowser() {
-        if ("mac".equalsIgnoreCase(selectPlatform) || "windows".equalsIgnoreCase(selectPlatform)) {
-            initializeDriver();
-            driver.manage().timeouts().pageLoadTimeout(45, TimeUnit.SECONDS); //tarayıcının bekleyeceği max süre
-
-
-            driver.get(testUrl);
-            logger.info(testUrl + " adresi açılıyor.");
-
-            if ("windows".equalsIgnoreCase(selectPlatform)) {
-                action = new Actions(driver);
-            }
+                throw new IllegalArgumentException("Unsupported browser: " + browserName);
         }
 
+        driver.manage().timeouts().pageLoadTimeout(30, TimeUnit.SECONDS);
+        driver.manage().timeouts().implicitlyWait(10, TimeUnit.SECONDS);
+        wait = new WebDriverWait(driver, 20);
     }
 
-    @BeforeScenario
-    public void startSetup(ExecutionContext context) {
-        String scenarioName = context.getCurrentScenario().getName();
-        if (scenarioName == null || !scenarioName.toLowerCase().contains("api")) {
-            try {
-                logger.info("Cihazda " + selectPlatform + " ortamında " + browserName + " browserinda test ayağa kalkacak");
-                setupBrowser();
-            } catch (Exception e) {
-                logger.info("Driver başlatılırken hata oluştu " + e.getMessage());
-            }
+    private static ChromeOptions getChromeOptions(boolean isHeadless) {
+        ChromeOptions options = new ChromeOptions();
+        Map<String, Object> prefs = new HashMap<>();
+        prefs.put("profile.default_content_setting_values.notifications", 2);
+        options.setExperimentalOption("prefs", prefs);
+        options.addArguments("--disable-notifications", "--start-maximized");
+
+        if (isHeadless) {
+            options.addArguments("--headless", "--disable-gpu", "--window-size=1920,1080");
         }
+        // Config dosyasından ChromeDriver yolunu al
+        String chromeDriverPath = Config.get("CHROME_DRIVER_PATH");
+        System.setProperty("webdriver.chrome.driver", "C:/Users/TKA/IdeaProjects/forTitle-dosya/testiniumcase-yeni/src/test/resources/web_driver/chromedriver.exe");
+        return options;
     }
 
-    @AfterScenario
-    public void quitDriver() {
+    private static FirefoxOptions getFirefoxOptions(boolean isHeadless) {
+        FirefoxOptions options = new FirefoxOptions();
+        options.addArguments("--disable-notifications");
+
+        if (isHeadless) {
+            options.addArguments("--headless");
+        }
+        return options;
+    }
+
+    public static void quitDriver() {
         if (driver != null) {
             driver.quit();
+            driver = null;
         }
+    }
+
+    public static WebDriverWait getWait() {
+        return wait;
     }
 }

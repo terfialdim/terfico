@@ -4,74 +4,72 @@ import com.banking.model.ElementInfo;
 import com.google.gson.Gson;
 import com.google.gson.reflect.TypeToken;
 import org.openqa.selenium.By;
-import java.io.File;
-import java.io.FileNotFoundException;
+import org.openqa.selenium.WebDriver;
+import org.openqa.selenium.WebElement;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 import java.io.FileReader;
 import java.io.IOException;
 import java.lang.reflect.Type;
-import java.nio.file.Files;
-import java.nio.file.Path;
-import java.nio.file.Paths;
-import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
-import java.util.stream.Stream;
 
 public class ElementHelper {
 
-    private final ConcurrentHashMap<String, ElementInfo> elementMapList;
+    private static final Logger logger = LoggerFactory.getLogger(ElementHelper.class);
+    private final WebDriver driver;
+    private final Map<String, ElementInfo> elementMap = new ConcurrentHashMap<>();
 
-    public ElementHelper() {
-        elementMapList = new ConcurrentHashMap<>();
+    public ElementHelper(WebDriver driver) {
+        this.driver = driver;
     }
 
-
-
-    public void initMap(List<File> fileList) {
-        Type elementType = new TypeToken<List<ElementInfo>>() {
-        }.getType();
-        Gson gson = new Gson();
-        List<ElementInfo> elementInfoList;
-        for (File file : fileList) {
-            try {
-                FileReader fileReader = new FileReader(file);
-                elementInfoList = gson.fromJson(fileReader, elementType);
-                elementInfoList.parallelStream().forEach(elementInfo -> elementMapList.put(elementInfo.getKey(), elementInfo));
-            } catch (FileNotFoundException e) {
-                e.printStackTrace();
+    public void loadElementsFromJson(String filePath) {
+        try (FileReader reader = new FileReader(filePath)) {
+            Gson gson = new Gson();
+            Type elementType = new TypeToken<List<ElementInfo>>() {}.getType();
+            List<ElementInfo> elements = gson.fromJson(reader, elementType);
+            for (ElementInfo element : elements) {
+                elementMap.put(element.getKey(), element);
+                logger.info("Loaded element: {} with locator: {}", element.getKey(), element.getValue());
             }
+        } catch (IOException e) {
+            logger.error("Error loading elements from JSON file: {}", filePath, e);
+            throw new RuntimeException("Failed to load elements from JSON file", e);
         }
     }
 
-    public static List<File> getFileList(String directoryName) throws IOException {
-        List<File> dirList = new ArrayList<>();
-        try (Stream<Path> walkStream = Files.walk(Paths.get(directoryName))) {
-            walkStream.filter(p -> p.toFile().isFile()).forEach(f -> {
-                if (f.toString().endsWith(".json")) {
-                    dirList.add(f.toFile());
-                }
-            });
+    public WebElement findElement(String key) {
+        ElementInfo elementInfo = elementMap.get(key);
+        if (elementInfo == null) {
+            logger.error("Element not found in the map for key: {}", key);
+            throw new IllegalArgumentException("Element not found for key: " + key);
         }
-        return dirList;
+
+        By locator = getBy(elementInfo);
+        try {
+            WebElement element = driver.findElement(locator);
+            logger.info("Element found: {}", key);
+            return element;
+        } catch (Exception e) {
+            logger.error("Unable to find element for key: {}. Locator: {}", key, locator, e);
+            throw e;
+        }
     }
 
-    public ElementInfo findElementInfoByKey(String key) {
-        return elementMapList.get(key);
-    }
-
-    public By getElementInfoBy(ElementInfo elementInfo) {
-        By by = null;
-        switch (elementInfo.getType()) {
+    private By getBy(ElementInfo elementInfo) {
+        switch (elementInfo.getType().toLowerCase()) {
             case "css":
-                by = By.cssSelector(elementInfo.getValue());
-                break;
+                return By.cssSelector(elementInfo.getValue());
             case "xpath":
-                by = By.xpath(elementInfo.getValue());
-                break;
+                return By.xpath(elementInfo.getValue());
             case "id":
-                by = By.id(elementInfo.getValue());
-                break;
+                return By.id(elementInfo.getValue());
+            default:
+                logger.error("Invalid locator type: {}", elementInfo.getType());
+                throw new IllegalArgumentException("Invalid locator type: " + elementInfo.getType());
         }
-        return by;
     }
 }

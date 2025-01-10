@@ -1,5 +1,5 @@
 # Login to the application
-* Navigate to base URL <https://catchylabs-webclient.testinium.com/student>
-* Enter "eyupcan.bilgin" into the username field
-* Enter "n6t+!RS7" into the password field
+* Navigate to baseURL
+* Enter username into the username field
+* Enter password into the password field
 * Click the login button

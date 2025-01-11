@@ -78,6 +78,7 @@ public class DriverFactory {
             driver.quit();
             driver = null;
         }
+        //TODO try catch and log
     }
 
     public static WebDriverWait getWait() {

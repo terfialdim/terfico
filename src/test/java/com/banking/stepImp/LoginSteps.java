@@ -1,10 +1,15 @@
 package com.banking.stepImp;
 
 import com.banking.pages.LoginPage;
+import com.epam.reportportal.message.ReportPortalMessage;
 import com.thoughtworks.gauge.Step;
 import com.banking.utils.Config; // Config sınıfı import edildi.
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
+import org.junit.jupiter.api.Test;
 
 public class LoginSteps {
+    private static final Logger LOGGER = LogManager.getLogger(Test.class);
 
     private final LoginPage loginPage;
 
@@ -21,6 +26,8 @@ public class LoginSteps {
     @Step("Enter username into the username field")
     public void enterUsername() {
         String username = Config.get("USERNAME"); // Properties dosyasından alınır.
+        ReportPortalMessage message = new ReportPortalMessage(username);
+        LOGGER.info(message);
         loginPage.enterUsername(username);
     }
 

@@ -1,0 +1,32 @@
+[
+  {
+    "key": "openMoneyTransferButton",
+    "value": "//div[@dir='auto' and text()='Open Money Transfer']",
+    "type": "xpath"
+  },
+  {
+    "key": "myAccountElement",
+    "value": "//div[@dir='auto' and text()='My account']",
+    "type": "xpath"
+  },
+  {
+    "key": "transactionsElement",
+    "value": "//div[@dir='auto' and text()='Transactions']",
+    "type": "xpath"
+  },
+  {
+    "key": "transferMoneyElement",
+    "value": "//div[@dir='auto' and text()='Transfer money']",
+    "type": "xpath"
+  },
+  {
+    "key": "addMoneyElement",
+    "value": "//div[@dir='auto' and text()='Add money']",
+    "type": "xpath"
+  },
+  {
+    "key": "editAccountElement",
+    "value": "//div[@dir='auto' and text()='Edit account']",
+    "type": "xpath"
+  }
+]
